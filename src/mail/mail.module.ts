@@ -22,7 +22,7 @@ import { MailService } from './mail.service';
         },
       },
       defaults: {
-        from: 'jongjjang03',
+        from: process.env.MAIL_FROM,
       },
       preview: false,
       template: {
