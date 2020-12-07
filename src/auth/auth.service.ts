@@ -184,8 +184,8 @@ export class AuthService {
     const subject = 'signup: verification code';
     const toName = '';
     const toEmail = email;
-    const fromName = process.env.MAIL_FROM;
-    const fromEmail = process.env.MAIL_EMAIL;
+    const fromName = process.env.MAIL_FROM_NAME;
+    const fromEmail = process.env.MAIL_FROM_EMAIL;
     const mailTemplate = SIGNUP_TEMPLATE;
 
     await this.mailService.send(
