@@ -44,7 +44,7 @@ export class User {
     if (this.authType !== authType) {
       throw new HttpException(
         new CustomException(
-          '이 이메일은 다른 로그인 방식으로 가입되어 있습니다.',
+          'This email is signed up with a different login way.',
         ),
         HttpStatus.FORBIDDEN,
       );
@@ -54,7 +54,9 @@ export class User {
   validateUserExit() {
     if (this.isExit) {
       throw new HttpException(
-        new CustomException('탈퇴된 계정입니다. 다른 계정을 이용해주세요.'),
+        new CustomException(
+          'This is deleted account. Please signup to continue.',
+        ),
         HttpStatus.FORBIDDEN,
       );
     }
@@ -64,7 +66,7 @@ export class User {
     if (this.authType !== AuthType.email) {
       throw new HttpException(
         new CustomException(
-          `해당 이메일은 SNS 로그인으로 가입되어 있어 비밀번호를 찾을 수 없습니다.`,
+          `This email is signed up with a SNS login, so you can't find password.`,
         ),
         HttpStatus.BAD_REQUEST,
       );
