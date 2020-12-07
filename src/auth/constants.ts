@@ -1,3 +1,3 @@
 export const jwtConstants = {
-  secret: 'lovoSecretKey',
+  secret: 'secretKey',
 };
