@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypegooseModule } from 'nestjs-typegoose';
+import { AuthModule } from 'src/auth/auth.module';
 import { User } from './schemas/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -14,6 +15,7 @@ import { UserService } from './user.service';
         },
       },
     ]),
+    forwardRef(() => AuthModule),
   ],
   controllers: [UserController],
   providers: [UserService],

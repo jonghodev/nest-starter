@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AppService } from '../app.service';
 import { Verification } from './schemas/verification.schema';
@@ -35,7 +35,7 @@ import { Tokenblacklist } from './schemas/tokenblacklist.schema';
     ]),
     PassportModule,
     MailModule,
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
   providers: [AuthService, AppService, LocalStrategy, JwtStrategy],

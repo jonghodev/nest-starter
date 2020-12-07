@@ -1,8 +1,18 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { ReturnModelType } from '@typegoose/typegoose';
+import { Request } from 'express';
 import { InjectModel } from 'nestjs-typegoose';
+import { AuthService } from 'src/auth/auth.service';
+import { VerificationType } from 'src/auth/schemas/verification.schema';
 import { comparePassword, hashPassword } from '../util/crypto';
 import { CustomException } from '../util/http';
+import { ChangeEmailDto } from './dto/change-email.dto';
 import { ChangeInfoDto } from './dto/change-info.dto';
 import { FindPasswordDto } from './dto/find-password.dto';
 import { User } from './schemas/user.schema';
@@ -12,6 +22,8 @@ export class UserService {
   constructor(
     @InjectModel(User)
     private readonly userModel: ReturnModelType<typeof User>,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -26,8 +38,8 @@ export class UserService {
     const user = await this.userModel.findByEmail(email);
     if (!user) {
       throw new HttpException(
-        new CustomException('등록되지 않은 이메일입니다.'),
-        HttpStatus.UNAUTHORIZED,
+        new CustomException('This email is not registered.'),
+        HttpStatus.BAD_REQUEST,
       );
     }
     return user;
@@ -53,20 +65,7 @@ export class UserService {
     return await this.save(user);
   }
 
-  async verifyPassword(user: User, changingPassword: string): Promise<void> {
-    const isSamePassword = await comparePassword(
-      changingPassword,
-      user.password,
-    );
-    if (!isSamePassword) {
-      throw new HttpException(
-        new CustomException('Your password is incorrect.'),
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async findPassword(
+  async changePassword(
     user: User,
     findPasswordDto: FindPasswordDto,
   ): Promise<User> {
@@ -77,17 +76,39 @@ export class UserService {
 
     if (isSamePassword) {
       throw new HttpException(
-        new CustomException('Same as the old password.'),
+        new CustomException(
+          'Same as the old password. Please type different password',
+        ),
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    return await this.changePassword(user, findPasswordDto.password);
+    return await this.updatePassword(user, findPasswordDto.password);
   }
 
-  async changePassword(user: User, password: string): Promise<User> {
+  async updatePassword(user: User, password: string): Promise<User> {
     const hashedPassword = await hashPassword(password);
     user.password = hashedPassword;
+    return await this.save(user);
+  }
+
+  async changeEmail(
+    req: Request,
+    user: User,
+    changeEmailDto: ChangeEmailDto,
+  ): Promise<User> {
+    await this.authService.verifyEmail(
+      changeEmailDto.email,
+      changeEmailDto.verificationCode,
+      VerificationType.CHANGE_EMAIL,
+    );
+
+    await this.authService.logout(req);
+
+    return await this.updateEmail(user, changeEmailDto.email);
+  }
+  async updateEmail(user: User, email: string): Promise<User> {
+    user.email = email;
     return await this.save(user);
   }
 

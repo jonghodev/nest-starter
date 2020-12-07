@@ -4,8 +4,8 @@ import {
   Delete,
   Get,
   HttpCode,
-  Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiResponse } from '../util/http';
@@ -14,9 +14,10 @@ import { User } from './schemas/user.schema';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { ChangeInfoDto } from './dto/change-info.dto';
-import { VerifyPasswordDto } from './dto/verify-password.dto';
 import { FindPasswordDto } from './dto/find-password.dto';
 import { DeleteUserDto } from './dto/delete-user.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
+import { Request } from 'express';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -24,48 +25,47 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @HttpCode(200)
-  @Get('check')
+  @Get('/check')
   async check(@ReqUser() user: User): Promise<ApiResponse> {
-    return ApiResponse.createSuccessApiResponse('유저 확인 성공', user);
+    return ApiResponse.create('user check success', user);
   }
 
   @HttpCode(200)
-  @Put('info')
+  @Put('/info')
   async changeInfo(
     @ReqUser() user: User,
     @Body() changeInfoDto: ChangeInfoDto,
   ): Promise<ApiResponse> {
     const changedUser = await this.userService.changeInfo(user, changeInfoDto);
-    return ApiResponse.createSuccessApiResponse(
-      '정보가 변경되었습니다.',
-      changedUser,
-    );
+    return ApiResponse.create('change info success', changedUser);
   }
 
   @HttpCode(200)
-  @Post('password/verify')
-  async verifyPassword(
-    @ReqUser() user: User,
-    @Body() verifyUserPasswordDto: VerifyPasswordDto,
-  ): Promise<ApiResponse> {
-    await this.userService.verifyPassword(user, verifyUserPasswordDto.password);
-    return ApiResponse.createSuccessApiResponse('인증처리 되었습니다.');
-  }
-
-  @HttpCode(200)
-  @Put('password')
-  async findPassword(
+  @Put('/password')
+  async changePassword(
     @ReqUser() user: User,
     @Body() FindPasswordDto: FindPasswordDto,
   ): Promise<ApiResponse> {
-    const updatedUser = await this.userService.findPassword(
+    const updatedUser = await this.userService.changePassword(
       user,
       FindPasswordDto,
     );
-    return ApiResponse.createSuccessApiResponse(
-      '비밀번호가 변경되었습니다.',
-      updatedUser,
+    return ApiResponse.create('password changed', updatedUser);
+  }
+
+  @HttpCode(200)
+  @Put('/email')
+  async changeEmail(
+    @Req() req: Request,
+    @ReqUser() user: User,
+    @Body() changeEmailDto: ChangeEmailDto,
+  ): Promise<ApiResponse> {
+    const updatedUser = await this.userService.changeEmail(
+      req,
+      user,
+      changeEmailDto,
     );
+    return ApiResponse.create('email changed. please re-login', updatedUser);
   }
 
   @HttpCode(200)
@@ -75,8 +75,6 @@ export class UserController {
     @Body() deleteUserDto: DeleteUserDto,
   ): Promise<ApiResponse> {
     await this.userService.delete(user, deleteUserDto.exitReason);
-    return ApiResponse.createSuccessApiResponse(
-      '회원의 계정이 삭제되었습니다.',
-    );
+    return ApiResponse.create('user deleted');
   }
 }

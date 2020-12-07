@@ -16,9 +16,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return "Server is healthy! - XX Server"', async () => {
-      expect(await appController.healthCheck()).toBe(
-        'Server is healthy! - XX Server',
-      );
+      expect(await appController.healthCheck()).toBe('Server is healthy!');
     });
   });
 });

@@ -5,6 +5,7 @@ import { CustomException } from 'src/util/http';
 export enum VerificationType {
   SIGNUP = 'SIGNUP',
   FIND_PASSWORD = 'FIND_PASSWORD',
+  CHANGE_EMAIL = 'CHANGE_EMAIL',
 }
 
 export class Verification {
@@ -23,7 +24,7 @@ export class Verification {
   validateSameCode(verificationCode: number) {
     if (this.verificationCode != verificationCode) {
       throw new HttpException(
-        new CustomException('인증번호가 틀렸습니다.'),
+        new CustomException('Wrong verification code.'),
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -35,7 +36,7 @@ export class Verification {
     const nowDate = new Date();
     if (expiredDate < nowDate.getDate()) {
       throw new HttpException(
-        new CustomException('인증시간을 초과했습니다.'),
+        new CustomException('Exceed verification expire time.'),
         HttpStatus.BAD_REQUEST,
       );
     }

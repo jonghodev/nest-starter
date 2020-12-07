@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import {
@@ -65,10 +70,14 @@ export class AuthService {
   private async requestGoogleOAuth(
     accessToken: string,
   ): Promise<GoogleRequest> {
-    const { data }: { data: GoogleRequest } = await axios.get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}`,
-    );
-    return data;
+    try {
+      const { data }: { data: GoogleRequest } = await axios.get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}`,
+      );
+      return data;
+    } catch (err) {
+      throw new UnauthorizedException('This access token is invalid.');
+    }
   }
 
   async facebookLogin(
@@ -89,14 +98,18 @@ export class AuthService {
   private async requestFacebookOAuth(
     accessToken: string,
   ): Promise<FacebookRequest> {
-    const { data }: { data: FacebookRequest } = await axios.get(
-      `https://graph.facebook.com/me?fields=name,email&access_token=${accessToken}`,
-    );
-    return data;
+    try {
+      const { data }: { data: FacebookRequest } = await axios.get(
+        `https://graph.facebook.com/me?fields=name,email&access_token=${accessToken}`,
+      );
+      return data;
+    } catch (err) {
+      throw new UnauthorizedException('This access token is invalid.');
+    }
   }
 
   async emailSignup(emailSignup: EmailSignupDto): Promise<User> {
-    this.validateUserAlreadyRegisterd(emailSignup.email);
+    this.validateEmailForSignup(emailSignup.email);
 
     await this.verifyEmail(
       emailSignup.email,
@@ -115,11 +128,11 @@ export class AuthService {
     return this.userService.create(userDto);
   }
 
-  async validateUserAlreadyRegisterd(email: string) {
-    const user = await this.userService.findByEmail(email);
+  async validateEmailForSignup(email: string) {
+    const user = await this.userService.existsByEmail(email);
     if (user) {
       throw new HttpException(
-        new CustomException('이미 가입된 이메일입니다.'),
+        new CustomException('This email is already registered.'),
         HttpStatus.UNAUTHORIZED,
       );
     }
@@ -128,7 +141,7 @@ export class AuthService {
   async googleSignup(snsSignup: SnsSignupDto): Promise<any> {
     const data = await this.requestGoogleOAuth(snsSignup.accessToken);
 
-    this.validateUserAlreadyRegisterd(data.email);
+    this.validateEmailForSignup(data.email);
 
     const userDto = {
       email: data.email,
@@ -144,7 +157,7 @@ export class AuthService {
   async facebookSignup(snsSignup: SnsSignupDto): Promise<any> {
     const data = await this.requestFacebookOAuth(snsSignup.accessToken);
 
-    this.validateUserAlreadyRegisterd(data.email);
+    this.validateEmailForSignup(data.email);
 
     const userDto = {
       email: data.email,
@@ -161,18 +174,18 @@ export class AuthService {
 
     if (isUserExists) {
       throw new HttpException(
-        new CustomException('이미 사용중인 이메일입니다.'),
+        new CustomException('This email is already registered.'),
         HttpStatus.BAD_REQUEST,
       );
     }
 
     const verificationCode = this.getVerificationCode();
 
-    const subject = '회원가입: 이메일 인증';
+    const subject = 'signup: verification code';
     const toName = '';
     const toEmail = email;
-    const fromName = 'XX 고객센터';
-    const fromEmail = process.env.MAIL_USERNAME;
+    const fromName = process.env.MAIL_FROM;
+    const fromEmail = process.env.MAIL_EMAIL;
     const mailTemplate = SIGNUP_TEMPLATE;
 
     await this.mailService.send(
@@ -218,18 +231,18 @@ export class AuthService {
 
     if (!isUserExists) {
       throw new HttpException(
-        new CustomException('존재하지 않는 이메일입니다.'),
+        new CustomException('This email is not registered.'),
         HttpStatus.BAD_REQUEST,
       );
     }
 
     const verificationCode = this.getVerificationCode();
 
-    const subject = '비밀번호 찾기: 이메일 인증';
+    const subject = 'Find password: verification code';
     const toName = '';
     const toEmail = email;
-    const fromName = 'XX 고객센터';
-    const fromEmail = process.env.MAIL_USERNAME;
+    const fromName = process.env.MAIL_FROM_NAME;
+    const fromEmail = process.env.MAIL_FROM_EMAIL;
     const mailTemplate = FIND_PASSWORD_TEMPLATE;
 
     await this.mailService.send(
@@ -250,6 +263,45 @@ export class AuthService {
     return savedVerification;
   }
 
+  async sendVerificationCodeForChangeEmail(
+    email: string,
+  ): Promise<Verification> {
+    const isUserExists = await this.userService.existsByEmail(email);
+
+    if (isUserExists) {
+      throw new HttpException(
+        new CustomException('This email is already registered.'),
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const verificationCode = this.getVerificationCode();
+
+    const subject = 'Change email: verification code';
+    const toName = '';
+    const toEmail = email;
+    const fromName = process.env.MAIL_FROM_NAME;
+    const fromEmail = process.env.MAIL_FROM_EMAIL;
+    const mailTemplate = FIND_PASSWORD_TEMPLATE;
+
+    await this.mailService.send(
+      subject,
+      toName,
+      toEmail,
+      fromName,
+      fromEmail,
+      mailTemplate,
+      { verificationCode },
+    );
+
+    const savedVerification = await this.saveVerification(
+      email,
+      verificationCode,
+      VerificationType.CHANGE_EMAIL,
+    );
+    return savedVerification;
+  }
+
   async verifyEmail(
     email: string,
     verificationCode: number,
@@ -262,7 +314,7 @@ export class AuthService {
 
     if (!verification) {
       throw new HttpException(
-        new CustomException('인증번호 전송 후 이용해주세요.'),
+        new CustomException('No verification code issued.'),
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -305,12 +357,14 @@ export class AuthService {
 
     if (isSamePassword) {
       throw new HttpException(
-        new CustomException('이전 비밀번호와 같습니다. 다시 시도해주세요.'),
+        new CustomException(
+          'Same as the old password. Please type different password',
+        ),
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const changedUser = await this.userService.changePassword(
+    const changedUser = await this.userService.updatePassword(
       user,
       findPassword.password,
     );
@@ -323,7 +377,7 @@ export class AuthService {
 
     if (findToken) {
       throw new HttpException(
-        new CustomException('로그아웃 처리된 토큰입니다. 다시 로그인해주세요.'),
+        new CustomException('This token is invalid. Please login again.'),
         HttpStatus.FORBIDDEN,
       );
     }

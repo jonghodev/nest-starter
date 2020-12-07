@@ -8,12 +8,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (err || !user) {
       if (err instanceof HttpException) {
         throw new HttpException(
-          new CustomException(err.message || '인증 오류가 발생했습니다.'),
+          new CustomException(
+            err.message || 'Please provide valid authentication token.',
+          ),
           err.getStatus() || 401,
         );
       } else {
         throw new HttpException(
-          new CustomException('인증 오류가 발생했습니다.'),
+          new CustomException('Please provide valid authentication token.'),
           401,
         );
       }

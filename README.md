@@ -1,24 +1,27 @@
 ## Description
 
-Moonda Server
+Nest Starter
 
 ## Installation
 
 ```bash
-$ npm install
+$ yarn
 ```
 
 ## Running the app
 
 ```bash
 # development
-$ npm run start
+$ yarn start:dev:no-watch
 
 # watch mode
-$ npm run start:dev
+$ yarn start:dev
 
-# production mode
-$ npm run start:prod
+# production mode1
+$ yarn start:prod
+
+# run build file
+$ yarn start
 ```
 
 ## Test
@@ -27,15 +30,77 @@ https://github.com/jmcdo29/testing-nestjs/blob/master/apps/mongo-sample/src/cat/
 
 ```bash
 # unit tests
-$ npm run test
+$ yarn test
 
 # e2e tests
-$ npm run test:e2e
+$ yarn test:e2e
 
 # test coverage
-$ npm run test:cov
+$ yarn test:cov
 ```
 
-## Env
+## Environment
 
-.env.sample 의 파일명을 .env.development, .env.production 으로 변경해서 사용해주세요.
+copy .env.sample to .env.development, .env.production
+
+## REST API Speicifiation
+
+### Success
+
+Spec
+
+```javascript
+{
+  success: boolean;
+  message: string;
+  data: any; // nullable
+}
+```
+
+Example
+
+```json
+{
+  "success": true,
+  "message": "signup success",
+  "data": {
+    "id": 1,
+    "email": "test@gmail.com"
+  }
+}
+```
+
+```json
+{
+  "success": true,
+  "message": "logout success"
+}
+```
+
+Reference: https://github.com/omniti-labs/jsend
+
+### Failure
+
+Spec
+
+```javascript
+{
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  error: string;
+}
+```
+
+Example
+
+```json
+{
+  "success": false,
+  "statusCode": 404,
+  "timestamp": "2020-12-07T02:01:34.643Z",
+  "path": "/auth/login/email",
+  "error": "Cannot POST /auth/hello"
+}
+```

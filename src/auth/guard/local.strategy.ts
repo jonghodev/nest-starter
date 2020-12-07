@@ -14,14 +14,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
   async validate(email: string, password: string): Promise<any> {
     const regex = new RegExp(['^', email, '$'].join(''), 'i');
-    const user = await this.userService.findByEmail(regex);
-
-    if (!user) {
-      throw new HttpException(
-        new CustomException('등록되지 않은 이메일입니다.'),
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+    const user = await this.userService.getByEmail(regex);
 
     user.validateUserExit();
 

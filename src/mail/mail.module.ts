@@ -22,7 +22,7 @@ import { MailService } from './mail.service';
         },
       },
       defaults: {
-        from: process.env.MAIL_FROM,
+        from: process.env.MAIL_FROM_NAME,
       },
       preview: false,
       template: {

@@ -1,27 +1,15 @@
 import { HttpException } from '@nestjs/common';
-import { CookieOptions, Request } from 'express';
-import { getNextYearDate } from './date';
-
-export const AUTH_COOKIE_NAME = 'ACCESS_TOKEN';
+import { Request } from 'express';
 
 export const tokenExtractor = (req: Request): string | null => {
   const token = req.headers.authorization;
   if (!token) {
     throw new HttpException(
-      new CustomException('인증 토큰 값이 필요합니다.'),
+      new CustomException('Authorization header is required.'),
       401,
     );
   }
   return token;
-};
-
-export const cookieOptions: CookieOptions = {
-  httpOnly: true,
-  sameSite: 'none',
-  domain: 'moonda.kr',
-  path: '/',
-  secure: true,
-  expires: getNextYearDate(),
 };
 
 export interface JwtPayload {
@@ -54,7 +42,7 @@ export class ApiResponse {
     return this.data;
   }
 
-  static createSuccessApiResponse(message: string, data?: any): ApiResponse {
+  static create(message: string, data?: any): ApiResponse {
     return new ApiResponse(true, message, data);
   }
 }
