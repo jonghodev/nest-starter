@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   Post,
   Put,
@@ -22,20 +23,24 @@ import { SnsLoginDto } from './dto/sns-login-dto';
 import { VerificationType } from './schemas/verification.schema';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 
-@Controller('auth')
+@Controller('/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Login
+   */
+
   @HttpCode(200)
   @UseGuards(LocalAuthGuard)
-  @Post('/login/email')
+  @Post('/tokens/email')
   async loginWithEmail(@ReqUser() user: User): Promise<ApiResponse> {
     const accessToken = this.authService.login(user);
     return ApiResponse.create('email login success', { user, accessToken });
   }
 
   @HttpCode(200)
-  @Post('/login/google')
+  @Post('/tokens/google')
   async googleLogin(@Body() snsLoginDto: SnsLoginDto): Promise<ApiResponse> {
     const { user, accessToken } = await this.authService.googleLogin(
       snsLoginDto,
@@ -47,7 +52,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('/login/facebook')
+  @Post('/tokens/facebook')
   async facebookLogin(@Body() snsLoginDto: SnsLoginDto): Promise<ApiResponse> {
     const { user, accessToken } = await this.authService.facebookLogin(
       snsLoginDto,
@@ -60,14 +65,18 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
-  @Post('logout')
+  @Delete('/tokens')
   async logout(@Req() req: Request): Promise<ApiResponse> {
     await this.authService.logout(req);
     return ApiResponse.create('logout success');
   }
 
+  /**
+   * Signup
+   */
+
   @HttpCode(201)
-  @Post('/signup/email')
+  @Post('/users/email')
   async emailSignup(
     @Body() emailSignupDto: EmailSignupDto,
   ): Promise<ApiResponse> {
@@ -76,14 +85,14 @@ export class AuthController {
   }
 
   @HttpCode(201)
-  @Post('/signup/google')
+  @Post('/users/google')
   async googleSignup(@Body() snsSignupDto: SnsSignupDto): Promise<ApiResponse> {
     const savedUser = await this.authService.googleSignup(snsSignupDto);
     return ApiResponse.create('google signup success', savedUser);
   }
 
   @HttpCode(201)
-  @Post('/signup/facebook')
+  @Post('/users/facebook')
   async facebookSignup(
     @Body() snsSignupDto: SnsSignupDto,
   ): Promise<ApiResponse> {
@@ -91,8 +100,23 @@ export class AuthController {
     return ApiResponse.create('facebook signup success', savedUser);
   }
 
+  /**
+   * Find password
+   */
+
   @HttpCode(200)
-  @Post('/verification/signup/send')
+  @Put('/find-password')
+  async findPassword(@Body() findPasswordDto: FindPasswordDto): Promise<any> {
+    await this.authService.findPassword(findPasswordDto);
+    return ApiResponse.create('find password success');
+  }
+
+  /**
+   * Verifications
+   */
+
+  @HttpCode(200)
+  @Post('/verifications/signup/send')
   async sendVerificationCodeForSignup(
     @Body() sendVerificationCodeDto: SendVerificationCodeDto,
   ): Promise<ApiResponse> {
@@ -103,7 +127,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('/verification/signup/verify')
+  @Post('/verifications/signup/verify')
   async verifyCodeForSignup(
     @Body() verifyCodeDto: VerifyCodeDto,
   ): Promise<ApiResponse> {
@@ -116,7 +140,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('/verification/find-password/send')
+  @Post('/verifications/find-password/send')
   async sendVerificationCodeForFindPassword(
     @Body() sendVerificationCodeDto: SendVerificationCodeDto,
   ): Promise<ApiResponse> {
@@ -127,7 +151,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('/verification/find-password/verify')
+  @Post('/verifications/find-password/verify')
   async verifyCodeForFindPassword(
     @Body() verifyCodeDto: VerifyCodeDto,
   ): Promise<ApiResponse> {
@@ -140,14 +164,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Put('/find-password')
-  async findPassword(@Body() findPasswordDto: FindPasswordDto): Promise<any> {
-    await this.authService.findPassword(findPasswordDto);
-    return ApiResponse.create('find password success');
-  }
-
-  @HttpCode(200)
-  @Post('/verification/change-email/send')
+  @Post('/verifications/change-email/send')
   async sendVerificationCodeForChangeEmail(
     @Body() sendVerificationCodeDto: SendVerificationCodeDto,
   ): Promise<ApiResponse> {

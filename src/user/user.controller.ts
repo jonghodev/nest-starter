@@ -24,11 +24,19 @@ import { Request } from 'express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  /**
+   * Check token
+   */
+
   @HttpCode(200)
   @Get('/check')
   async check(@ReqUser() user: User): Promise<ApiResponse> {
     return ApiResponse.create('user check success', user);
   }
+
+  /**
+   * Update Info
+   */
 
   @HttpCode(200)
   @Put('/info')
@@ -39,6 +47,10 @@ export class UserController {
     const changedUser = await this.userService.changeInfo(user, changeInfoDto);
     return ApiResponse.create('change info success', changedUser);
   }
+
+  /**
+   * Update Password
+   */
 
   @HttpCode(200)
   @Put('/password')
@@ -52,6 +64,10 @@ export class UserController {
     );
     return ApiResponse.create('password changed', updatedUser);
   }
+
+  /**
+   * Update Email
+   */
 
   @HttpCode(200)
   @Put('/email')
@@ -67,6 +83,10 @@ export class UserController {
     );
     return ApiResponse.create('email changed. please re-login', updatedUser);
   }
+
+  /**
+   * Delete account
+   */
 
   @HttpCode(200)
   @Delete()
