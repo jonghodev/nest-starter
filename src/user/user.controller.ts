@@ -29,7 +29,7 @@ export class UserController {
    */
 
   @HttpCode(200)
-  @Get('/check')
+  @Get('')
   async check(@ReqUser() user: User): Promise<ApiResponse> {
     return ApiResponse.create('user check success', user);
   }

@@ -175,7 +175,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('/verification/change-email/verify')
+  @Post('/verifications/change-email/verify')
   async verifyCodeForChangeEmail(
     @Body() verifyCodeDto: VerifyCodeDto,
   ): Promise<ApiResponse> {
