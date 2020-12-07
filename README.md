@@ -65,7 +65,7 @@ Example
   "message": "signup success",
   "data": {
     "id": 1,
-    "email": "test@gmail.com"
+    "email": "jongho.dev@gmail.com"
   }
 }
 ```
